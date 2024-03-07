@@ -1,0 +1,6 @@
+---
+kind: service.CodeCov
+spec:
+  # lots of Kubernetes and Talos dependent collectors, so it's a pain to cover them with unit tests
+  # bundle collector with mock collectors has good coverage though
+  targetThreshold: 15
