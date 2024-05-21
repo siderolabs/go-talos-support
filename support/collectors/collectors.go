@@ -11,12 +11,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	criconstants "github.com/containerd/containerd/pkg/cri/constants"
 	"github.com/cosi-project/runtime/pkg/resource/meta"
 	"github.com/cosi-project/runtime/pkg/safe"
 	"github.com/cosi-project/runtime/pkg/state"
 	"github.com/siderolabs/talos/pkg/machinery/api/common"
 	"github.com/siderolabs/talos/pkg/machinery/client"
+	"github.com/siderolabs/talos/pkg/machinery/constants"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/siderolabs/go-talos-support/support/bundle"
@@ -209,7 +209,7 @@ func getServiceLogCollectors(ctx context.Context, c *client.Client) ([]*Collecto
 }
 
 func getKubernetesLogCollectors(ctx context.Context, c *client.Client) ([]*Collector, error) {
-	namespace := criconstants.K8sContainerdNamespace
+	namespace := constants.K8sContainerdNamespace
 	driver := common.ContainerDriver_CRI
 
 	resp, err := c.Containers(ctx, namespace, driver)

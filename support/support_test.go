@@ -89,7 +89,7 @@ func TestCollectWithProgress(t *testing.T) {
 
 	group := 0
 
-	for i := 0; i < cap(cols); i++ {
+	for i := range cap(cols) {
 		if i%10 == 0 {
 			group++
 		}
@@ -115,7 +115,7 @@ func TestCollectWithProgress(t *testing.T) {
 
 	require.Len(archive.files, len(cols))
 
-	for i := 0; i < len(cols); i++ {
+	for i := range len(cols) {
 		assert.Contains(t, archive.files, fmt.Sprintf("%d", i))
 	}
 

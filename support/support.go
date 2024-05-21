@@ -29,7 +29,7 @@ func CreateSupportBundle(ctx context.Context, options *bundle.Options, cols ...*
 		options.NumWorkers = 1
 	}
 
-	for i := 0; i < options.NumWorkers; i++ {
+	for range options.NumWorkers {
 		eg.Go(func() error {
 			for {
 				select {
