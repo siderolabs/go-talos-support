@@ -176,11 +176,11 @@ func ioPressure(ctx context.Context, options *bundle.Options) ([]byte, error) {
 	var buf bytes.Buffer
 
 	w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(w, "NAME\tIO_TIME\tIO_TIME_WEIGHTED\tDISK_WRITE_SECTORS\tDISK_READ_SECTORS")
+	fmt.Fprintln(w, "NAME\tIO_TIME\tIO_TIME_WEIGHTED\tDISK_WRITE_SECTORS\tDISK_READ_SECTORS") //nolint:errcheck
 
 	for _, msg := range resp.Messages {
 		for _, stat := range msg.Devices {
-			fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\n",
+			fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\n", //nolint:errcheck
 				stat.Name,
 				stat.IoTimeMs,
 				stat.IoTimeWeightedMs,
@@ -208,7 +208,7 @@ func processes(ctx context.Context, options *bundle.Options) ([]byte, error) {
 	var buf bytes.Buffer
 
 	w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(w, "PID\tSTATE\tTHREADS\tCPU-TIME\tVIRTMEM\tRESMEM\tCOMMAND")
+	fmt.Fprintln(w, "PID\tSTATE\tTHREADS\tCPU-TIME\tVIRTMEM\tRESMEM\tCOMMAND") //nolint:errcheck
 
 	for _, msg := range resp.Messages {
 		procs := msg.Processes
@@ -225,7 +225,7 @@ func processes(ctx context.Context, options *bundle.Options) ([]byte, error) {
 				args = p.Args
 			}
 
-			fmt.Fprintf(w, "%6d\t%1s\t%4d\t%8.2f\t%7s\t%7s\t%s\n",
+			fmt.Fprintf(w, "%6d\t%1s\t%4d\t%8.2f\t%7s\t%7s\t%s\n", //nolint:errcheck
 				p.Pid, p.State, p.Threads, p.CpuTime, humanize.Bytes(p.VirtualMemory), humanize.Bytes(p.ResidentMemory), args)
 		}
 	}

@@ -129,6 +129,7 @@ func GetTalosNodeCollectors(ctx context.Context, client *client.Client) ([]*Coll
 	base := []*Collector{
 		NewCollector("dmesg.log", dmesg),
 		NewCollector("controller-runtime.log", logs("controller-runtime", false)),
+		NewCollector("dns-resolve-cache.log", logs("dns-resolve-cache", false)),
 		NewCollector("dependencies.dot", dependencies),
 		NewCollector("mounts", mounts),
 		NewCollector("devices", devices),
