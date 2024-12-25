@@ -35,7 +35,7 @@ func CreateSupportBundle(ctx context.Context, options *bundle.Options, cols ...*
 				select {
 				case collector := <-tasks:
 					if collector == nil {
-						return nil
+						return ctx.Err()
 					}
 
 					err := collector.Run(ctx, options)
@@ -62,7 +62,7 @@ func CreateSupportBundle(ctx context.Context, options *bundle.Options, cols ...*
 	}
 
 	for _, col := range cols {
-		tasks <- col
+		channel.SendWithContext(ctx, tasks, col)
 	}
 
 	close(tasks)

@@ -1,6 +1,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2024-08-12T12:50:05Z by kres 2ab5924.
+# Generated on 2024-12-25T15:05:54Z by kres fcff05e.
 
 # common variables
 
@@ -17,15 +17,15 @@ WITH_RACE ?= false
 REGISTRY ?= ghcr.io
 USERNAME ?= siderolabs
 REGISTRY_AND_USERNAME ?= $(REGISTRY)/$(USERNAME)
-PROTOBUF_GO_VERSION ?= 1.34.2
+PROTOBUF_GO_VERSION ?= 1.36.0
 GRPC_GO_VERSION ?= 1.5.1
-GRPC_GATEWAY_VERSION ?= 2.21.0
+GRPC_GATEWAY_VERSION ?= 2.24.0
 VTPROTOBUF_VERSION ?= 0.6.0
-GOIMPORTS_VERSION ?= 0.24.0
+GOIMPORTS_VERSION ?= 0.28.0
 DEEPCOPY_VERSION ?= v0.5.6
-GOLANGCILINT_VERSION ?= v1.59.1
-GOFUMPT_VERSION ?= v0.6.0
-GO_VERSION ?= 1.22.6
+GOLANGCILINT_VERSION ?= v1.62.2
+GOFUMPT_VERSION ?= v0.7.0
+GO_VERSION ?= 1.23.4
 GO_BUILDFLAGS ?=
 GO_LDFLAGS ?=
 CGO_ENABLED ?= 0
@@ -41,11 +41,13 @@ PLATFORM ?= linux/amd64
 PROGRESS ?= auto
 PUSH ?= false
 CI_ARGS ?=
+BUILDKIT_MULTI_PLATFORM ?= 1
 COMMON_ARGS = --file=Dockerfile
 COMMON_ARGS += --provenance=false
 COMMON_ARGS += --progress=$(PROGRESS)
 COMMON_ARGS += --platform=$(PLATFORM)
 COMMON_ARGS += --push=$(PUSH)
+COMMON_ARGS += --build-arg=BUILDKIT_MULTI_PLATFORM=$(BUILDKIT_MULTI_PLATFORM)
 COMMON_ARGS += --build-arg=ARTIFACTS="$(ARTIFACTS)"
 COMMON_ARGS += --build-arg=SHA="$(SHA)"
 COMMON_ARGS += --build-arg=TAG="$(TAG)"
@@ -67,7 +69,7 @@ COMMON_ARGS += --build-arg=DEEPCOPY_VERSION="$(DEEPCOPY_VERSION)"
 COMMON_ARGS += --build-arg=GOLANGCILINT_VERSION="$(GOLANGCILINT_VERSION)"
 COMMON_ARGS += --build-arg=GOFUMPT_VERSION="$(GOFUMPT_VERSION)"
 COMMON_ARGS += --build-arg=TESTPKGS="$(TESTPKGS)"
-TOOLCHAIN ?= docker.io/golang:1.22-alpine
+TOOLCHAIN ?= docker.io/golang:1.23-alpine
 
 # help menu
 
@@ -145,6 +147,15 @@ target-%:  ## Builds the specified target defined in the Dockerfile. The build r
 
 local-%:  ## Builds the specified target defined in the Dockerfile using the local output type. The build result will be output to the specified local destination.
 	@$(MAKE) target-$* TARGET_ARGS="--output=type=local,dest=$(DEST) $(TARGET_ARGS)"
+	@PLATFORM=$(PLATFORM) DEST=$(DEST) bash -c '\
+	  for platform in $$(tr "," "\n" <<< "$$PLATFORM"); do \
+	    echo $$platform; \
+	    directory="$${platform//\//_}"; \
+	    if [[ -d "$$DEST/$$directory" ]]; then \
+	      mv -f "$$DEST/$$directory/"* $$DEST; \
+	      rmdir "$$DEST/$$directory/"; \
+	    fi; \
+	  done'
 
 lint-golangci-lint:  ## Runs golangci-lint linter.
 	@$(MAKE) target-$@

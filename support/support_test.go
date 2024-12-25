@@ -77,6 +77,43 @@ func TestCollect(t *testing.T) {
 	require.EqualValues("another", archive.files["n1/1"])
 }
 
+func TestCollectTimeout(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	archive := &testArchive{}
+
+	require := require.New(t)
+
+	cols := []*collectors.Collector{
+		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+			time.Sleep(time.Second)
+
+			return []byte("something"), nil
+		}),
+		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+			time.Sleep(time.Second)
+
+			return []byte("something"), nil
+		}),
+	}
+
+	cols = append(cols,
+		collectors.WithNode(
+			[]*collectors.Collector{
+				collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+					return []byte("another"), nil
+				}),
+			}, "n1",
+		)...)
+
+	options := bundle.NewOptions(
+		bundle.WithArchive(archive),
+	)
+
+	require.ErrorIs(support.CreateSupportBundle(ctx, options, cols...), context.DeadlineExceeded)
+}
+
 func TestCollectWithProgress(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
@@ -115,7 +152,7 @@ func TestCollectWithProgress(t *testing.T) {
 
 	require.Len(archive.files, len(cols))
 
-	for i := range len(cols) {
+	for i := range cols {
 		assert.Contains(t, archive.files, fmt.Sprintf("%d", i))
 	}
 
