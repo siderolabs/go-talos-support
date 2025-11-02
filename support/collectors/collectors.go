@@ -239,7 +239,7 @@ func getKubernetesLogCollectors(ctx context.Context, c *client.Client) ([]*Colle
 				collectors = append(
 					collectors,
 					NewCollector(
-						fmt.Sprintf("%s/%s%s.log", parts[0], container.Name, exited),
+						fmt.Sprintf("%s/%s%s.log", parts[0], parts[1], exited),
 						logs(container.Id, true),
 					),
 				)

@@ -83,7 +83,7 @@ func (a *archive) Close() error {
 // Log writes the line to logger or to stdout if no logger was provided.
 func (options *Options) Log(line string, args ...interface{}) {
 	if options.LogOutput != nil {
-		options.LogOutput.Write([]byte(fmt.Sprintf(line, args...))) //nolint:errcheck
+		fmt.Fprintf(options.LogOutput, line, args...) //nolint:errcheck
 
 		return
 	}

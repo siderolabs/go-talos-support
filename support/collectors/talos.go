@@ -166,7 +166,9 @@ func ioPressure(ctx context.Context, options *bundle.Options) ([]byte, error) {
 	resp, err := options.TalosClient.MachineClient.DiskStats(ctx, &emptypb.Empty{})
 
 	var filtered interface{}
+
 	filtered, err = client.FilterMessages(resp, err)
+
 	resp, _ = filtered.(*machine.DiskStatsResponse) //nolint:errcheck
 
 	if err != nil {

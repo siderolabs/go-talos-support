@@ -1,6 +1,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2024-12-25T15:05:54Z by kres fcff05e.
+# Generated on 2025-11-03T14:52:39Z by kres cd5a938.
 
 # common variables
 
@@ -17,19 +17,21 @@ WITH_RACE ?= false
 REGISTRY ?= ghcr.io
 USERNAME ?= siderolabs
 REGISTRY_AND_USERNAME ?= $(REGISTRY)/$(USERNAME)
-PROTOBUF_GO_VERSION ?= 1.36.0
+PROTOBUF_GO_VERSION ?= 1.36.10
 GRPC_GO_VERSION ?= 1.5.1
-GRPC_GATEWAY_VERSION ?= 2.24.0
+GRPC_GATEWAY_VERSION ?= 2.27.3
 VTPROTOBUF_VERSION ?= 0.6.0
-GOIMPORTS_VERSION ?= 0.28.0
-DEEPCOPY_VERSION ?= v0.5.6
-GOLANGCILINT_VERSION ?= v1.62.2
-GOFUMPT_VERSION ?= v0.7.0
-GO_VERSION ?= 1.23.4
+GOIMPORTS_VERSION ?= 0.38.0
+GOMOCK_VERSION ?= 0.6.0
+DEEPCOPY_VERSION ?= v0.5.8
+GOLANGCILINT_VERSION ?= v2.5.0
+GOFUMPT_VERSION ?= v0.9.1
+GO_VERSION ?= 1.25.3
 GO_BUILDFLAGS ?=
 GO_LDFLAGS ?=
 CGO_ENABLED ?= 0
 GOTOOLCHAIN ?= local
+GOEXPERIMENT ?=
 TESTPKGS ?= ./...
 KRES_IMAGE ?= ghcr.io/siderolabs/kres:latest
 CONFORMANCE_IMAGE ?= ghcr.io/siderolabs/conform:latest
@@ -41,13 +43,13 @@ PLATFORM ?= linux/amd64
 PROGRESS ?= auto
 PUSH ?= false
 CI_ARGS ?=
-BUILDKIT_MULTI_PLATFORM ?= 1
+BUILDKIT_MULTI_PLATFORM ?=
 COMMON_ARGS = --file=Dockerfile
 COMMON_ARGS += --provenance=false
 COMMON_ARGS += --progress=$(PROGRESS)
 COMMON_ARGS += --platform=$(PLATFORM)
-COMMON_ARGS += --push=$(PUSH)
 COMMON_ARGS += --build-arg=BUILDKIT_MULTI_PLATFORM=$(BUILDKIT_MULTI_PLATFORM)
+COMMON_ARGS += --push=$(PUSH)
 COMMON_ARGS += --build-arg=ARTIFACTS="$(ARTIFACTS)"
 COMMON_ARGS += --build-arg=SHA="$(SHA)"
 COMMON_ARGS += --build-arg=TAG="$(TAG)"
@@ -65,11 +67,12 @@ COMMON_ARGS += --build-arg=GRPC_GO_VERSION="$(GRPC_GO_VERSION)"
 COMMON_ARGS += --build-arg=GRPC_GATEWAY_VERSION="$(GRPC_GATEWAY_VERSION)"
 COMMON_ARGS += --build-arg=VTPROTOBUF_VERSION="$(VTPROTOBUF_VERSION)"
 COMMON_ARGS += --build-arg=GOIMPORTS_VERSION="$(GOIMPORTS_VERSION)"
+COMMON_ARGS += --build-arg=GOMOCK_VERSION="$(GOMOCK_VERSION)"
 COMMON_ARGS += --build-arg=DEEPCOPY_VERSION="$(DEEPCOPY_VERSION)"
 COMMON_ARGS += --build-arg=GOLANGCILINT_VERSION="$(GOLANGCILINT_VERSION)"
 COMMON_ARGS += --build-arg=GOFUMPT_VERSION="$(GOFUMPT_VERSION)"
 COMMON_ARGS += --build-arg=TESTPKGS="$(TESTPKGS)"
-TOOLCHAIN ?= docker.io/golang:1.23-alpine
+TOOLCHAIN ?= docker.io/golang:1.25-alpine
 
 # help menu
 
@@ -145,13 +148,16 @@ clean:  ## Cleans up all artifacts.
 target-%:  ## Builds the specified target defined in the Dockerfile. The build result will only remain in the build cache.
 	@$(BUILD) --target=$* $(COMMON_ARGS) $(TARGET_ARGS) $(CI_ARGS) .
 
+registry-%:  ## Builds the specified target defined in the Dockerfile and the output is an image. The image is pushed to the registry if PUSH=true.
+	@$(MAKE) target-$* TARGET_ARGS="--tag=$(REGISTRY)/$(USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)" BUILDKIT_MULTI_PLATFORM=1
+
 local-%:  ## Builds the specified target defined in the Dockerfile using the local output type. The build result will be output to the specified local destination.
 	@$(MAKE) target-$* TARGET_ARGS="--output=type=local,dest=$(DEST) $(TARGET_ARGS)"
 	@PLATFORM=$(PLATFORM) DEST=$(DEST) bash -c '\
 	  for platform in $$(tr "," "\n" <<< "$$PLATFORM"); do \
-	    echo $$platform; \
 	    directory="$${platform//\//_}"; \
 	    if [[ -d "$$DEST/$$directory" ]]; then \
+		  echo $$platform; \
 	      mv -f "$$DEST/$$directory/"* $$DEST; \
 	      rmdir "$$DEST/$$directory/"; \
 	    fi; \
@@ -159,6 +165,9 @@ local-%:  ## Builds the specified target defined in the Dockerfile using the loc
 
 lint-golangci-lint:  ## Runs golangci-lint linter.
 	@$(MAKE) target-$@
+
+lint-golangci-lint-fmt:  ## Runs golangci-lint formatter and tries to fix issues automatically.
+	@$(MAKE) local-$@ DEST=.
 
 lint-gofumpt:  ## Runs gofumpt linter.
 	@$(MAKE) target-$@
@@ -192,6 +201,9 @@ lint-markdown:  ## Runs markdownlint.
 
 .PHONY: lint
 lint: lint-golangci-lint lint-gofumpt lint-govulncheck lint-markdown  ## Run all linters for the project.
+
+.PHONY: lint-fmt
+lint-fmt: lint-golangci-lint-fmt  ## Run all linter formatters and fix up the source tree.
 
 .PHONY: rekres
 rekres:

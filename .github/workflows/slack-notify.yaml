@@ -1,19 +1,18 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2024-12-25T15:05:54Z by kres fcff05e.
+# Generated on 2025-11-03T14:52:39Z by kres cd5a938.
 
-name: slack-notify
 "on":
   workflow_run:
     workflows:
       - default
     types:
       - completed
+name: slack-notify
 jobs:
   slack-notify:
     runs-on:
-      - self-hosted
-      - generic
+      group: generic
     if: github.event.workflow_run.conclusion != 'skipped'
     steps:
       - name: Get PR number
@@ -29,64 +28,66 @@ jobs:
           method: chat.postMessage
           payload: |
             {
-                "channel": "proj-talos-maintainers",
+                "channel": "ci-all",
+                "text": "${{ github.event.workflow_run.conclusion }} - ${{ github.repository }}",
+                "icon_emoji": "${{ github.event.workflow_run.conclusion == 'success' && ':white_check_mark:' || github.event.workflow_run.conclusion == 'failure' && ':x:' || ':warning:' }}",
+                "username": "GitHub Actions",
                 "attachments": [
                     {
-                        "color": "${{ github.event.workflow_run.conclusion == 'success' && '#2EB886' || github.event.workflow_run.conclusion == 'failure' && '#A30002' || '#FFCC00' }}",
-                        "fallback": "test",
                         "blocks": [
                             {
-                                "type": "section",
                                 "fields": [
                                     {
-                                        "type": "mrkdwn",
-                                        "text": "${{ github.event.workflow_run.event == 'pull_request' && format('*Pull Request:* {0} (`{1}`)\n<{2}/pull/{3}|{4}>', github.repository, github.ref_name, github.event.repository.html_url, steps.get-pr-number.outputs.pull_request_number, github.event.workflow_run.display_title) || format('*Build:* {0} (`{1}`)\n<{2}/commit/{3}|{4}>', github.repository, github.ref_name, github.event.repository.html_url, github.sha, github.event.workflow_run.display_title) }}"
+                                        "text": "${{ github.event.workflow_run.event == 'pull_request' && format('*Pull Request:* {0} (`{1}`)\n<{2}/pull/{3}|{4}>', github.repository, github.ref_name, github.event.repository.html_url, steps.get-pr-number.outputs.pull_request_number, github.event.workflow_run.display_title) || format('*Build:* {0} (`{1}`)\n<{2}/commit/{3}|{4}>', github.repository, github.ref_name, github.event.repository.html_url, github.sha, github.event.workflow_run.display_title) }}",
+                                        "type": "mrkdwn"
                                     },
                                     {
-                                        "type": "mrkdwn",
-                                        "text": "*Status:*\n`${{ github.event.workflow_run.conclusion }}`"
+                                        "text": "*Status:*\n`${{ github.event.workflow_run.conclusion }}`",
+                                        "type": "mrkdwn"
                                     }
-                                ]
+                                ],
+                                "type": "section"
                             },
                             {
-                                "type": "section",
                                 "fields": [
                                     {
-                                        "type": "mrkdwn",
-                                        "text": "*Author:*\n`${{ github.actor }}`"
+                                        "text": "*Author:*\n`${{ github.actor }}`",
+                                        "type": "mrkdwn"
                                     },
                                     {
-                                        "type": "mrkdwn",
-                                        "text": "*Event:*\n`${{ github.event.workflow_run.event }}`"
+                                        "text": "*Event:*\n`${{ github.event.workflow_run.event }}`",
+                                        "type": "mrkdwn"
                                     }
-                                ]
+                                ],
+                                "type": "section"
                             },
                             {
                                 "type": "divider"
                             },
                             {
-                                "type": "actions",
                                 "elements": [
                                     {
-                                        "type": "button",
                                         "text": {
-                                            "type": "plain_text",
-                                            "text": "Logs"
+                                            "text": "Logs",
+                                            "type": "plain_text"
                                         },
+                                        "type": "button",
                                         "url": "${{ github.event.workflow_run.html_url }}"
                                     },
                                     {
-                                        "type": "button",
                                         "text": {
-                                            "type": "plain_text",
-                                            "text": "Commit"
+                                            "text": "Commit",
+                                            "type": "plain_text"
                                         },
+                                        "type": "button",
                                         "url": "${{ github.event.repository.html_url }}/commit/${{ github.sha }}"
                                     }
-                                ]
+                                ],
+                                "type": "actions"
                             }
-                        ]
+                        ],
+                        "color": "${{ github.event.workflow_run.conclusion == 'success' && '#2EB886' || github.event.workflow_run.conclusion == 'failure' && '#A30002' || '#FFCC00' }}"
                     }
                 ]
             }
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          token: ${{ secrets.SLACK_BOT_TOKEN_V2 }}

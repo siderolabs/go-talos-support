@@ -165,6 +165,7 @@ outer:
 		select {
 		case p := <-progress:
 			assert.Equal(t, p.Total, 10)
+
 			count++
 
 			finalValues[p.Source]++
