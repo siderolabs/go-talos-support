@@ -3,17 +3,17 @@ module github.com/siderolabs/go-talos-support
 go 1.22.7
 
 require (
-	github.com/cosi-project/runtime v0.5.5
+	github.com/cosi-project/runtime v1.12.0
 	github.com/dustin/go-humanize v1.0.1
-	github.com/siderolabs/gen v0.5.0
-	github.com/siderolabs/talos/pkg/machinery v1.8.0
-	github.com/stretchr/testify v1.9.0
-	golang.org/x/sync v0.8.0
-	google.golang.org/grpc v1.66.0
-	google.golang.org/protobuf v1.34.2
+	github.com/siderolabs/gen v0.8.6
+	github.com/siderolabs/talos/pkg/machinery v1.11.3
+	github.com/stretchr/testify v1.11.1
+	golang.org/x/sync v0.17.0
+	google.golang.org/grpc v1.76.0
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/apimachinery v0.30.3
-	k8s.io/client-go v0.30.3
+	k8s.io/apimachinery v0.34.1
+	k8s.io/client-go v0.34.1
 )
 
 require (
