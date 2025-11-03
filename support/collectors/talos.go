@@ -24,9 +24,9 @@ import (
 	"github.com/siderolabs/talos/pkg/machinery/constants"
 	"github.com/siderolabs/talos/pkg/machinery/formatters"
 	"github.com/siderolabs/talos/pkg/machinery/version"
+	"go.yaml.in/yaml/v4"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"gopkg.in/yaml.v3"
 
 	"github.com/siderolabs/go-talos-support/support/bundle"
 )
