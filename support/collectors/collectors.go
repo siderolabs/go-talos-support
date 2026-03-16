@@ -93,6 +93,25 @@ func WithNode(collectors []*Collector, node string) []*Collector {
 	return collectors
 }
 
+// WithTalosClient returns collectors that use the given Talos client instead of options.TalosClient.
+func WithTalosClient(collectors []*Collector, node string, talosClient *client.Client) []*Collector {
+	for _, c := range collectors {
+		collectFunc := c.collect
+
+		c.collect = func(ctx context.Context, options *bundle.Options) ([]byte, error) {
+			optionsCopy := *options
+			optionsCopy.TalosClient = talosClient
+
+			return collectFunc(ctx, &optionsCopy)
+		}
+
+		c.source = node
+		c.destinationPath = filepath.Join(node, c.destinationPath)
+	}
+
+	return collectors
+}
+
 // WithSource returns collectors which custom source name.
 func WithSource(collectors []*Collector, source string) []*Collector {
 	for _, c := range collectors {
@@ -110,7 +129,21 @@ func GetForOptions(ctx context.Context, options *bundle.Options) ([]*Collector, 
 		collectors = append(collectors, WithSource(GetKubernetesCollectors(options.KubernetesClient), Cluster)...)
 	}
 
-	if options.TalosClient != nil && len(options.Nodes) > 0 {
+	if options.TalosClientProvider != nil && len(options.Nodes) > 0 {
+		for _, node := range options.Nodes {
+			nodeClient, err := options.TalosClientProvider(ctx, node)
+			if err != nil {
+				return nil, err
+			}
+
+			nodeCollectors, err := GetTalosNodeCollectors(ctx, nodeClient)
+			if err != nil {
+				return nil, err
+			}
+
+			collectors = append(collectors, WithTalosClient(nodeCollectors, node, nodeClient)...)
+		}
+	} else if options.TalosClient != nil && len(options.Nodes) > 0 {
 		for _, node := range options.Nodes {
 			nodeCollectors, err := GetTalosNodeCollectors(client.WithNode(ctx, node), options.TalosClient)
 			if err != nil {

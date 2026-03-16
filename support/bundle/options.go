@@ -72,3 +72,16 @@ func WithNodes(nodes ...string) Option {
 		o.Nodes = nodes
 	}
 }
+
+// WithTalosClientProvider sets a function that returns a Talos client for a given node.
+//
+// When set together with WithNodes, this replaces WithTalosClient: instead of sending
+// requests through a single client with node-to-node proxying headers, each node gets
+// its own direct client from the provider.
+//
+// The caller is responsible for managing the lifecycle of the returned clients (e.g. closing them).
+func WithTalosClientProvider(provider TalosClientProvider) Option {
+	return func(o *Options) {
+		o.TalosClientProvider = provider
+	}
+}

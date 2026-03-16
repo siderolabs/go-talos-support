@@ -165,7 +165,7 @@ func ioPressure(ctx context.Context, options *bundle.Options) ([]byte, error) {
 
 	resp, err := options.TalosClient.MachineClient.DiskStats(ctx, &emptypb.Empty{})
 
-	var filtered interface{}
+	var filtered any
 
 	filtered, err = client.FilterMessages(resp, err)
 
@@ -278,7 +278,7 @@ func talosResource(rd *meta.ResourceDefinition) Collect {
 		for _, r := range resources.Items {
 			data := struct {
 				Metadata *resource.Metadata `yaml:"metadata"`
-				Spec     interface{}        `yaml:"spec"`
+				Spec     any                `yaml:"spec"`
 			}{
 				Metadata: r.Metadata(),
 				Spec:     "<REDACTED>",

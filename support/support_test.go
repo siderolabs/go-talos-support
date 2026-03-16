@@ -49,14 +49,16 @@ func TestCollect(t *testing.T) {
 
 	require := require.New(t)
 
-	cols := []*collectors.Collector{
+	cols := make([]*collectors.Collector, 0, 3)
+
+	cols = append(cols,
 		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
 			return []byte("something"), nil
 		}),
 		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
 			return []byte("something"), nil
 		}),
-	}
+	)
 
 	cols = append(cols,
 		collectors.WithNode(
@@ -77,6 +79,61 @@ func TestCollect(t *testing.T) {
 	require.EqualValues("another", archive.files["n1/1"])
 }
 
+func TestCollectWithTalosClient(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	archive := &testArchive{}
+
+	require := require.New(t)
+
+	cols := []*collectors.Collector{
+		collectors.NewCollector("cluster-info", func(context.Context, *bundle.Options) ([]byte, error) {
+			return []byte("cluster"), nil
+		}),
+	}
+
+	cols = append(cols,
+		collectors.WithTalosClient(
+			[]*collectors.Collector{
+				collectors.NewCollector("data", func(_ context.Context, opts *bundle.Options) ([]byte, error) {
+					// verify that the collector receives the per-node client via options
+					if opts.TalosClient == nil {
+						return []byte("no-client"), nil
+					}
+
+					return []byte("from-node"), nil
+				}),
+			}, "node-1", nil,
+		)...)
+
+	cols = append(cols,
+		collectors.WithTalosClient(
+			[]*collectors.Collector{
+				collectors.NewCollector("data", func(_ context.Context, opts *bundle.Options) ([]byte, error) {
+					if opts.TalosClient == nil {
+						return []byte("no-client"), nil
+					}
+
+					return []byte("from-node"), nil
+				}),
+			}, "node-2", nil,
+		)...)
+
+	options := bundle.NewOptions(
+		bundle.WithArchive(archive),
+	)
+
+	require.NoError(support.CreateSupportBundle(ctx, options, cols...))
+
+	require.EqualValues("cluster", archive.files["cluster-info"])
+	// WithTalosClient sets the client to nil in this test, so collectors see nil
+	require.EqualValues("no-client", archive.files["node-1/data"])
+	require.EqualValues("no-client", archive.files["node-2/data"])
+	// files are placed under node-prefixed paths
+	require.NotContains(archive.files, "data")
+}
+
 func TestCollectTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -85,7 +142,9 @@ func TestCollectTimeout(t *testing.T) {
 
 	require := require.New(t)
 
-	cols := []*collectors.Collector{
+	cols := make([]*collectors.Collector, 0, 3)
+
+	cols = append(cols,
 		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
 			time.Sleep(time.Second)
 
@@ -96,7 +155,7 @@ func TestCollectTimeout(t *testing.T) {
 
 			return []byte("something"), nil
 		}),
-	}
+	)
 
 	cols = append(cols,
 		collectors.WithNode(
