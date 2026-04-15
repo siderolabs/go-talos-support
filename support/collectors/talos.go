@@ -17,6 +17,7 @@ import (
 
 	"github.com/cosi-project/runtime/pkg/resource"
 	"github.com/cosi-project/runtime/pkg/resource/meta"
+	"github.com/cosi-project/runtime/pkg/state"
 	"github.com/dustin/go-humanize"
 	"github.com/siderolabs/talos/pkg/machinery/api/common"
 	"github.com/siderolabs/talos/pkg/machinery/api/machine"
@@ -263,7 +264,9 @@ func talosResource(rd *meta.ResourceDefinition) Collect {
 	return func(ctx context.Context, options *bundle.Options) ([]byte, error) {
 		options.Log("getting talos resource %s/%s", rd.TypedSpec().DefaultNamespace, rd.TypedSpec().Type)
 
-		resources, err := options.TalosClient.COSI.List(ctx, resource.NewMetadata(rd.TypedSpec().DefaultNamespace, rd.TypedSpec().Type, "", resource.VersionUndefined))
+		resources, err := options.TalosClient.COSI.List(ctx, resource.NewMetadata(rd.TypedSpec().DefaultNamespace, rd.TypedSpec().Type, "", resource.VersionUndefined),
+			state.WithListUnmarshalOptions(state.WithSkipProtobufUnmarshal()),
+		)
 		if err != nil {
 			return nil, err
 		}
