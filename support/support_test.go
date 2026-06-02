@@ -5,8 +5,10 @@
 package support_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -16,6 +18,7 @@ import (
 
 	"github.com/siderolabs/go-talos-support/support"
 	"github.com/siderolabs/go-talos-support/support/bundle"
+	"github.com/siderolabs/go-talos-support/support/bundle/encryption"
 	"github.com/siderolabs/go-talos-support/support/collectors"
 )
 
@@ -42,6 +45,8 @@ func (a *testArchive) Close() error {
 }
 
 func TestCollect(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -51,7 +56,8 @@ func TestCollect(t *testing.T) {
 
 	cols := make([]*collectors.Collector, 0, 3)
 
-	cols = append(cols,
+	cols = append(
+		cols,
 		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
 			return []byte("something"), nil
 		}),
@@ -79,7 +85,51 @@ func TestCollect(t *testing.T) {
 	require.EqualValues("another", archive.files["n1/1"])
 }
 
+func TestCollectWithEncryption(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	require := require.New(t)
+
+	cols := slices.Concat(
+		[]*collectors.Collector{
+			collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+				return []byte("something"), nil
+			}),
+			collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+				return []byte("something"), nil
+			}),
+		},
+		collectors.WithNode(
+			[]*collectors.Collector{
+				collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+					return []byte("another"), nil
+				}),
+			}, "n1",
+		),
+	)
+
+	var out bytes.Buffer
+
+	encryptedWriter, err := encryption.Encrypt(&out)
+	require.NoError(err)
+
+	options := bundle.NewOptions(
+		bundle.WithArchiveOutput(encryptedWriter),
+	)
+
+	require.NoError(support.CreateSupportBundle(ctx, options, cols...))
+
+	require.NoError(encryptedWriter.Close())
+
+	require.NotEmpty(out.Bytes())
+}
+
 func TestCollectWithTalosClient(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -135,6 +185,8 @@ func TestCollectWithTalosClient(t *testing.T) {
 }
 
 func TestCollectTimeout(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -144,7 +196,8 @@ func TestCollectTimeout(t *testing.T) {
 
 	cols := make([]*collectors.Collector, 0, 3)
 
-	cols = append(cols,
+	cols = append(
+		cols,
 		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
 			time.Sleep(time.Second)
 
@@ -174,6 +227,8 @@ func TestCollectTimeout(t *testing.T) {
 }
 
 func TestCollectWithProgress(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 

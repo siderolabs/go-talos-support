@@ -183,7 +183,8 @@ func ioPressure(ctx context.Context, options *bundle.Options) ([]byte, error) {
 
 	for _, msg := range resp.Messages {
 		for _, stat := range msg.Devices {
-			fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\n", //nolint:errcheck
+			fmt.Fprintf( //nolint:errcheck
+				w, "%s\t%d\t%d\t%d\t%d\n",
 				stat.Name,
 				stat.IoTimeMs,
 				stat.IoTimeWeightedMs,
@@ -264,7 +265,8 @@ func talosResource(rd *meta.ResourceDefinition) Collect {
 	return func(ctx context.Context, options *bundle.Options) ([]byte, error) {
 		options.Log("getting talos resource %s/%s", rd.TypedSpec().DefaultNamespace, rd.TypedSpec().Type)
 
-		resources, err := options.TalosClient.COSI.List(ctx, resource.NewMetadata(rd.TypedSpec().DefaultNamespace, rd.TypedSpec().Type, "", resource.VersionUndefined),
+		resources, err := options.TalosClient.COSI.List(
+			ctx, resource.NewMetadata(rd.TypedSpec().DefaultNamespace, rd.TypedSpec().Type, "", resource.VersionUndefined),
 			state.WithListUnmarshalOptions(state.WithSkipProtobufUnmarshal()),
 		)
 		if err != nil {
