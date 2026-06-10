@@ -16,18 +16,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// TalosClientProvider is a function that returns a Talos client for a given node.
-//
-// It is an alternative to using a single TalosClient with WithNodes: instead of
-// relying on node-to-node proxying, the provider can return a client connected
-// directly to the target node.
+// TalosClientProvider is a function that returns a Talos client and context for a given node.
 //
 // The caller is responsible for managing the lifecycle of the returned clients (e.g. closing them).
-type TalosClientProvider func(ctx context.Context, node string) (*client.Client, error)
+type TalosClientProvider func(ctx context.Context, node string) (context.Context, *client.Client, error)
 
 // Options defines GetSupportBundle options.
 type Options struct {
-	TalosClient         *client.Client
 	TalosClientProvider TalosClientProvider
 	KubernetesClient    *kubernetes.Clientset
 	Archive             Archive

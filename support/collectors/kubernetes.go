@@ -12,13 +12,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/siderolabs/go-talos-support/support/bundle"
 )
 
-func kubernetesNodes(client *kubernetes.Clientset) Collect {
-	return func(ctx context.Context, options *bundle.Options) ([]byte, error) {
-		options.Log("getting kubernetes nodes manifests")
+func kubernetesNodes(ctx context.Context, log Logger, client *kubernetes.Clientset) Collect {
+	return func() ([]byte, error) {
+		log("getting kubernetes nodes manifests")
 
 		nodes, err := client.CoreV1().Nodes().List(ctx, v1.ListOptions{})
 		if err != nil {
@@ -29,16 +27,16 @@ func kubernetesNodes(client *kubernetes.Clientset) Collect {
 	}
 }
 
-func systemPods(client *kubernetes.Clientset) Collect {
-	return func(ctx context.Context, options *bundle.Options) ([]byte, error) {
-		options.Log("getting pods manifests in kube-system namespace")
+func systemPods(ctx context.Context, log Logger, client *kubernetes.Clientset) Collect {
+	return func() ([]byte, error) {
+		log("getting pods manifests in kube-system namespace")
 
-		nodes, err := client.CoreV1().Pods("kube-system").List(ctx, v1.ListOptions{})
+		pods, err := client.CoreV1().Pods("kube-system").List(ctx, v1.ListOptions{})
 		if err != nil {
 			return nil, err
 		}
 
-		return marshalKubernetesResources(nodes)
+		return marshalKubernetesResources(pods)
 	}
 }
 

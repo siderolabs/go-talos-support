@@ -58,18 +58,18 @@ func TestCollect(t *testing.T) {
 
 	cols = append(
 		cols,
-		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+		collectors.NewCollector("1", func() ([]byte, error) {
 			return []byte("something"), nil
 		}),
-		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+		collectors.NewCollector("1", func() ([]byte, error) {
 			return []byte("something"), nil
 		}),
 	)
 
 	cols = append(cols,
-		collectors.WithNode(
+		collectors.WithFolder(
 			[]*collectors.Collector{
-				collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+				collectors.NewCollector("1", func() ([]byte, error) {
 					return []byte("another"), nil
 				}),
 			}, "n1",
@@ -95,20 +95,13 @@ func TestCollectWithEncryption(t *testing.T) {
 
 	cols := slices.Concat(
 		[]*collectors.Collector{
-			collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+			collectors.NewCollector("1", func() ([]byte, error) {
 				return []byte("something"), nil
 			}),
-			collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+			collectors.NewCollector("1", func() ([]byte, error) {
 				return []byte("something"), nil
 			}),
 		},
-		collectors.WithNode(
-			[]*collectors.Collector{
-				collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
-					return []byte("another"), nil
-				}),
-			}, "n1",
-		),
 	)
 
 	var out bytes.Buffer
@@ -127,63 +120,6 @@ func TestCollectWithEncryption(t *testing.T) {
 	require.NotEmpty(out.Bytes())
 }
 
-func TestCollectWithTalosClient(t *testing.T) {
-	t.Parallel()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	archive := &testArchive{}
-
-	require := require.New(t)
-
-	cols := []*collectors.Collector{
-		collectors.NewCollector("cluster-info", func(context.Context, *bundle.Options) ([]byte, error) {
-			return []byte("cluster"), nil
-		}),
-	}
-
-	cols = append(cols,
-		collectors.WithTalosClient(
-			[]*collectors.Collector{
-				collectors.NewCollector("data", func(_ context.Context, opts *bundle.Options) ([]byte, error) {
-					// verify that the collector receives the per-node client via options
-					if opts.TalosClient == nil {
-						return []byte("no-client"), nil
-					}
-
-					return []byte("from-node"), nil
-				}),
-			}, "node-1", nil,
-		)...)
-
-	cols = append(cols,
-		collectors.WithTalosClient(
-			[]*collectors.Collector{
-				collectors.NewCollector("data", func(_ context.Context, opts *bundle.Options) ([]byte, error) {
-					if opts.TalosClient == nil {
-						return []byte("no-client"), nil
-					}
-
-					return []byte("from-node"), nil
-				}),
-			}, "node-2", nil,
-		)...)
-
-	options := bundle.NewOptions(
-		bundle.WithArchive(archive),
-	)
-
-	require.NoError(support.CreateSupportBundle(ctx, options, cols...))
-
-	require.EqualValues("cluster", archive.files["cluster-info"])
-	// WithTalosClient sets the client to nil in this test, so collectors see nil
-	require.EqualValues("no-client", archive.files["node-1/data"])
-	require.EqualValues("no-client", archive.files["node-2/data"])
-	// files are placed under node-prefixed paths
-	require.NotContains(archive.files, "data")
-}
-
 func TestCollectTimeout(t *testing.T) {
 	t.Parallel()
 
@@ -198,26 +134,17 @@ func TestCollectTimeout(t *testing.T) {
 
 	cols = append(
 		cols,
-		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+		collectors.NewCollector("1", func() ([]byte, error) {
 			time.Sleep(time.Second)
 
 			return []byte("something"), nil
 		}),
-		collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
+		collectors.NewCollector("1", func() ([]byte, error) {
 			time.Sleep(time.Second)
 
 			return []byte("something"), nil
 		}),
 	)
-
-	cols = append(cols,
-		collectors.WithNode(
-			[]*collectors.Collector{
-				collectors.NewCollector("1", func(context.Context, *bundle.Options) ([]byte, error) {
-					return []byte("another"), nil
-				}),
-			}, "n1",
-		)...)
 
 	options := bundle.NewOptions(
 		bundle.WithArchive(archive),
@@ -246,7 +173,7 @@ func TestCollectWithProgress(t *testing.T) {
 		}
 
 		col := []*collectors.Collector{
-			collectors.NewCollector(fmt.Sprintf("%d", i), func(context.Context, *bundle.Options) ([]byte, error) {
+			collectors.NewCollector(fmt.Sprintf("%d", i), func() ([]byte, error) {
 				return []byte("something"), nil
 			}),
 		}

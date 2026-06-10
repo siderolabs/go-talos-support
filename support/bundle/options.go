@@ -8,19 +8,11 @@ import (
 	"archive/zip"
 	"io"
 
-	"github.com/siderolabs/talos/pkg/machinery/client"
 	"k8s.io/client-go/kubernetes"
 )
 
 // Option defines a single bundle option.
 type Option func(*Options)
-
-// WithTalosClient runs bundle creator with the Talos client.
-func WithTalosClient(client *client.Client) Option {
-	return func(o *Options) {
-		o.TalosClient = client
-	}
-}
 
 // WithKubernetesClient runs bundle creator with the Kubernetes client.
 func WithKubernetesClient(clientset *kubernetes.Clientset) Option {

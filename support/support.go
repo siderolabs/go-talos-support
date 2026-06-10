@@ -33,12 +33,12 @@ func CreateSupportBundle(ctx context.Context, options *bundle.Options, cols ...*
 		eg.Go(func() error {
 			for {
 				select {
-				case collector := <-tasks:
-					if collector == nil {
+				case collector, ok := <-tasks:
+					if !ok {
 						return ctx.Err()
 					}
 
-					err := collector.Run(ctx, options)
+					err := collector.Run(options.Archive)
 
 					if !collectProgress {
 						continue
