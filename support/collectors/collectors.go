@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/siderolabs/go-talos-support/support/bundle"
+	"github.com/siderolabs/go-talos-support/support/collectors/internal/resources"
 )
 
 // Cluster is the const for the top level cluster collectors.
@@ -196,12 +197,19 @@ func getTalosResources(ctx context.Context, log Logger, c *client.Client) ([]*Co
 		return nil, err
 	}
 
+	redaction, err := resources.RedactionSupported(ctx, c)
+	if err != nil {
+		// keep going without redaction: the specs of the sensitive resources are then left out of the
+		// bundle, which is what a node without redaction support gets anyway
+		log("error detecting resource redaction support, collecting without redaction: %s", err)
+	}
+
 	var collectors []*Collector
 
 	rds.ForEach(func(res *meta.ResourceDefinition) {
 		collectors = append(collectors, NewCollector(
 			fmt.Sprintf("%s.yaml", res.Metadata().ID()),
-			talosResource(res)(ctx, log, c),
+			talosResource(res, redaction)(ctx, log, c),
 		))
 	})
 

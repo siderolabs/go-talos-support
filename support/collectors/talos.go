@@ -16,9 +16,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/cosi-project/runtime/pkg/resource"
 	"github.com/cosi-project/runtime/pkg/resource/meta"
-	"github.com/cosi-project/runtime/pkg/state"
 	"github.com/dustin/go-humanize"
 	"github.com/siderolabs/talos/pkg/machinery/api/common"
 	"github.com/siderolabs/talos/pkg/machinery/api/machine"
@@ -26,9 +24,10 @@ import (
 	"github.com/siderolabs/talos/pkg/machinery/constants"
 	"github.com/siderolabs/talos/pkg/machinery/formatters"
 	"github.com/siderolabs/talos/pkg/machinery/version"
-	"go.yaml.in/yaml/v4"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/siderolabs/go-talos-support/support/collectors/internal/resources"
 )
 
 func dmesg(ctx context.Context, _ Logger, c *client.Client) Collect {
@@ -285,51 +284,12 @@ func summary(ctx context.Context, _ Logger, c *client.Client) Collect {
 	}
 }
 
-func talosResource(rd *meta.ResourceDefinition) TalosCollect {
+func talosResource(rd *meta.ResourceDefinition, redaction bool) TalosCollect {
 	return func(ctx context.Context, log Logger, c *client.Client) Collect {
 		return func() ([]byte, error) {
 			log("getting talos resource %s/%s", rd.TypedSpec().DefaultNamespace, rd.TypedSpec().Type)
 
-			resources, err := c.COSI.List(
-				ctx, resource.NewMetadata(rd.TypedSpec().DefaultNamespace, rd.TypedSpec().Type, "", resource.VersionUndefined),
-				state.WithListUnmarshalOptions(state.WithSkipProtobufUnmarshal()),
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			var (
-				buf      bytes.Buffer
-				hasItems bool
-			)
-
-			encoder := yaml.NewEncoder(&buf)
-
-			for _, r := range resources.Items {
-				data := struct {
-					Metadata *resource.Metadata `yaml:"metadata"`
-					Spec     any                `yaml:"spec"`
-				}{
-					Metadata: r.Metadata(),
-					Spec:     "<REDACTED>",
-				}
-
-				if rd.TypedSpec().Sensitivity != meta.Sensitive {
-					data.Spec = r.Spec()
-				}
-
-				if err = encoder.Encode(&data); err != nil {
-					return nil, err
-				}
-
-				hasItems = true
-			}
-
-			if !hasItems {
-				return nil, nil
-			}
-
-			return buf.Bytes(), encoder.Close()
+			return resources.Dump(ctx, c, rd, redaction)
 		}
 	}
 }
